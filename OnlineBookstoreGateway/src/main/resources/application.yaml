@@ -1,0 +1,57 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: onlinebookstore-gateway
+  main:
+    web-application-type: reactive
+
+  cloud:
+    gateway:
+      default-filters:
+        # Keep original Host header
+        - PreserveHostHeader
+      routes:
+        - id: user-service
+          uri: http://user-service:9001
+          predicates:
+            - Path=/user-service/**
+          filters:
+            # Strip the "/user-service" prefix before sending to service
+            - StripPrefix=1
+            - RemoveRequestHeader=Authorization
+
+        - id: book-service
+          uri: http://book-service:9002
+          predicates:
+            - Path=/book-service/**
+          filters:
+            - StripPrefix=1
+            - RemoveRequestHeader=Authorization
+
+        - id: order-service
+          uri: http://order-service:9003
+          predicates:
+            - Path=/order-service/**
+          filters:
+            - StripPrefix=1
+            - RemoveRequestHeader=Authorization
+
+    # Eureka client configuration
+    discovery:
+      enabled: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway.route.RoutePredicateHandlerMapping: TRACE
+    org.springframework.cloud.gateway: TRACE
+    org.springframework.web.reactive: TRACE
+    reactor.netty: TRACE

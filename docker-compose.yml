@@ -1,0 +1,114 @@
+version: '3.9'
+
+services:
+  # -----------------------------
+  # Eureka Server
+  # -----------------------------
+  eureka-server:
+    build: ./OnlineBookstoreEurekaServer
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+
+  # -----------------------------
+  # API Gateway
+  # -----------------------------
+  gateway-service:
+    build: ./OnlineBookstoreGateway
+    container_name: gateway-service
+    ports:
+      - "9000:9000"
+    depends_on:
+      - eureka-server
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+
+  # -----------------------------
+  # PostgreSQL for User Service
+  # -----------------------------
+  postgres-user:
+    image: postgres:17
+    container_name: postgres-user
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: online_bookstore_user_service
+    ports:
+      - "5432:5432"
+
+  # -----------------------------
+  # User Service
+  # -----------------------------
+  user-service:
+    build: ./UserService
+    container_name: user-service
+    ports:
+      - "9001:9001"
+    depends_on:
+      - eureka-server
+      - postgres-user
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-user:5432/online_bookstore_user_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+
+  # -----------------------------
+  # PostgreSQL for Book Service
+  # -----------------------------
+  postgres-book:
+    image: postgres:17
+    container_name: postgres-book
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: online_bookstore_book_service
+    ports:
+      - "5433:5432"
+
+  # -----------------------------
+  # Book Service
+  # -----------------------------
+  book-service:
+    build: ./BookService
+    container_name: book-service
+    ports:
+      - "9002:9002"
+    depends_on:
+      - eureka-server
+      - postgres-book
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-book:5432/online_bookstore_book_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+
+  # -----------------------------
+  # PostgreSQL for Order Service
+  # -----------------------------
+  postgres-order:
+    image: postgres:17
+    container_name: postgres-order
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: online_bookstore_order_service
+    ports:
+      - "5434:5432"
+
+  # -----------------------------
+  # Order Service
+  # -----------------------------
+  order-service:
+    build: ./OrderService
+    container_name: order-service
+    ports:
+      - "9003:9003"
+    depends_on:
+      - eureka-server
+      - postgres-order
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-order:5432/online_bookstore_order_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
